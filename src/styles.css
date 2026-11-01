@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+* { box-sizing: border-box; }
+html, body, #root { min-height: 100%; margin: 0; }
+body { min-width: 320px; background: #f7f9f7; }
+.crm-loading { display: grid; min-height: 100vh; place-items: center; color: #52775f; font: 600 14px "DM Sans", sans-serif; }
