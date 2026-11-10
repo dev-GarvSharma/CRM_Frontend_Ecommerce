@@ -1,5 +1,11 @@
 import { useEffect, useState } from "react";
-import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import {
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 import AdminSidebar from "./components/AdminSidebar.jsx";
 import AdminTopbar from "./components/AdminTopbar.jsx";
 import { Toast } from "./components/AdminPrimitives.jsx";
@@ -20,6 +26,7 @@ import AbandonedCarts from "./pages/AbandonedCarts.jsx";
 import ContactMessages from "./pages/ContactMessages.jsx";
 import Blogs from "./pages/Blogs.jsx";
 import Notifications from "./pages/Notifications/Notifications.jsx";
+import Reviews from "./pages/Reviews.jsx";
 import Auth from "../pages/Auth.jsx";
 import { isAdminAccount, logout as requestLogout } from "../api/auth.js";
 import { get } from "./app/axiosWrapper.js";
@@ -33,11 +40,13 @@ export default function AdminApp() {
   const [collapsed, setCollapsed] = useState(false);
   const [search, setSearch] = useState("");
   const [toast, setToast] = useState("");
-  const [currentUser, setCurrentUser] = useState(LocalStorageService.getUserData());
+  const [currentUser, setCurrentUser] = useState(
+    LocalStorageService.getUserData(),
+  );
   const isLoginRoute = location.pathname === "/admin/login";
   const isAuthenticatedAdmin = Boolean(
     LocalStorageService.getAccessToken() &&
-      isAdminAccount(LocalStorageService.getUserData()),
+    isAdminAccount(LocalStorageService.getUserData()),
   );
 
   useEffect(() => {
@@ -47,7 +56,10 @@ export default function AdminApp() {
       if (result.success && isAdminAccount(user)) {
         setCurrentUser(user);
         LocalStorageService.setUserData(user);
-      } else if (result.status === 403 || (result.success && !isAdminAccount(user))) {
+      } else if (
+        result.status === 403 ||
+        (result.success && !isAdminAccount(user))
+      ) {
         LocalStorageService.clearAuthData();
         setCurrentUser(null);
       }
@@ -91,7 +103,12 @@ export default function AdminApp() {
   }, []);
 
   if (isLoginRoute) {
-    return <Routes><Route path="/admin/login" element={<Auth adminMode />} /><Route path="*" element={<Navigate to="/admin/login" replace />} /></Routes>;
+    return (
+      <Routes>
+        <Route path="/admin/login" element={<Auth adminMode />} />
+        <Route path="*" element={<Navigate to="/admin/login" replace />} />
+      </Routes>
+    );
   }
 
   if (!isAuthenticatedAdmin) {
@@ -134,6 +151,10 @@ export default function AdminApp() {
               element={<Products globalSearch={search} onNotify={setToast} />}
             />
             <Route
+              path="/admin/reviews"
+              element={<Reviews onNotify={setToast} />}
+            />
+            <Route
               path="/admin/orders"
               element={<Orders globalSearch={search} onNotify={setToast} />}
             />
@@ -165,14 +186,44 @@ export default function AdminApp() {
               path="/admin/access"
               element={<Access globalSearch={search} onNotify={setToast} />}
             />
-            <Route path="/admin/coupons" element={<Offers globalSearch={search} onNotify={setToast} />} />
-            <Route path="/admin/offers" element={<Navigate to="/admin/coupons" replace />} />
-            <Route path="/admin/promotions" element={<Promotions globalSearch={search} onNotify={setToast} />} />
-            <Route path="/admin/activity" element={<Activity globalSearch={search} onNotify={setToast} />} />
-            <Route path="/admin/abandoned-carts" element={<AbandonedCarts globalSearch={search} onNotify={setToast} />} />
-            <Route path="/admin/contact-messages" element={<ContactMessages globalSearch={search} onNotify={setToast} />} />
-            <Route path="/admin/blogs" element={<Blogs globalSearch={search} onNotify={setToast} />} />
-            <Route path="/admin/notifications" element={<Notifications globalSearch={search} onNotify={setToast} />} />
+            <Route
+              path="/admin/coupons"
+              element={<Offers globalSearch={search} onNotify={setToast} />}
+            />
+            <Route
+              path="/admin/offers"
+              element={<Navigate to="/admin/coupons" replace />}
+            />
+            <Route
+              path="/admin/promotions"
+              element={<Promotions globalSearch={search} onNotify={setToast} />}
+            />
+            <Route
+              path="/admin/activity"
+              element={<Activity globalSearch={search} onNotify={setToast} />}
+            />
+            <Route
+              path="/admin/abandoned-carts"
+              element={
+                <AbandonedCarts globalSearch={search} onNotify={setToast} />
+              }
+            />
+            <Route
+              path="/admin/contact-messages"
+              element={
+                <ContactMessages globalSearch={search} onNotify={setToast} />
+              }
+            />
+            <Route
+              path="/admin/blogs"
+              element={<Blogs globalSearch={search} onNotify={setToast} />}
+            />
+            <Route
+              path="/admin/notifications"
+              element={
+                <Notifications globalSearch={search} onNotify={setToast} />
+              }
+            />
             <Route path="*" element={<Navigate to="/admin" replace />} />
           </Routes>
         </main>

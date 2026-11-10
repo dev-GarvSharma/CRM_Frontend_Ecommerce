@@ -8,14 +8,17 @@ import {
   Save,
   Store,
 } from "lucide-react";
-import {
-  getStoreSettings,
-  saveStoreSettings,
-} from "./api.js";
+import { getStoreSettings, saveStoreSettings } from "./api.js";
 import LocalStorageService from "../../services/localStorageService.js";
+import {
+  getRazorpayMode,
+  getRazorpayTestOrders,
+  setRazorpayMode,
+} from "../Products/api.js";
 import {
   ErrorState,
   LoadingState,
+  ListPagination,
   PageHeading,
 } from "../../components/AdminPrimitives.jsx";
 
@@ -23,6 +26,7 @@ const sections = [
   { key: "general", name: "General", icon: Store },
   { key: "notifications", name: "Notifications", icon: Bell },
   { key: "checkout", name: "Checkout", icon: CreditCard },
+  { key: "payments", name: "Razorpay", icon: CreditCard },
   { key: "regional", name: "Regional", icon: Globe2 },
   { key: "security", name: "Security", icon: LockKeyhole },
 ];
@@ -34,6 +38,12 @@ export default function Settings({ onNotify }) {
   const [activeSection, setActiveSection] = useState("general");
   const [form, setForm] = useState({});
   const [saving, setSaving] = useState(false);
+  const [razorpayConfig, setRazorpayConfig] = useState(null);
+  const [testOrders, setTestOrders] = useState([]);
+  const [testOrderMeta, setTestOrderMeta] = useState(null);
+  const [testOrderPage, setTestOrderPage] = useState(1);
+  const [testOrderRecords, setTestOrderRecords] = useState(20);
+  const [razorpaySaving, setRazorpaySaving] = useState(false);
   const user = LocalStorageService.getUserData();
   const load = () => {
     setLoading(true);
@@ -56,8 +66,20 @@ export default function Settings({ onNotify }) {
       .finally(() => setLoading(false));
   }, []);
   useEffect(() => {
+    getRazorpayMode().then((result) =>
+      setRazorpayConfig(result.data?.data || null),
+    );
+  }, []);
+  useEffect(() => {
+    getRazorpayTestOrders(testOrderPage, testOrderRecords).then((result) => {
+      setTestOrders(result.data?.data || []);
+      setTestOrderMeta(result.data?.meta || null);
+    });
+  }, [testOrderPage, testOrderRecords]);
+  useEffect(() => {
     const section = new URLSearchParams(location.search).get("section");
-    if (sections.some((item) => item.key === section)) setActiveSection(section);
+    if (sections.some((item) => item.key === section))
+      setActiveSection(section);
   }, [location.search]);
   const update = (key, value) =>
     setForm((current) => ({ ...current, [key]: value }));
@@ -66,7 +88,19 @@ export default function Settings({ onNotify }) {
     setSaving(true);
     const result = await saveStoreSettings(form);
     setSaving(false);
-    onNotify(result.message || (result.success ? "Settings saved." : "Could not save settings."));
+    onNotify(
+      result.message ||
+        (result.success ? "Settings saved." : "Could not save settings."),
+    );
+  };
+  const changeRazorpayMode = async (mode) => {
+    setRazorpaySaving(true);
+    const result = await setRazorpayMode(mode);
+    setRazorpaySaving(false);
+    if (!result.success)
+      return onNotify(result.message || "Could not change Razorpay mode.");
+    setRazorpayConfig(result.data?.data || null);
+    onNotify(`Razorpay ${mode} mode enabled.`);
   };
   if (loading) return <LoadingState label="Loading store settings" />;
   if (failed) return <ErrorState retry={load} />;
@@ -78,15 +112,17 @@ export default function Settings({ onNotify }) {
         title="Settings"
         description="Configure how your store operates behind the scenes."
         action={
-          <button
-            className="admin-button admin-button-dark"
-            form="admin-settings-form"
-            type="submit"
-            disabled={saving}
-          >
-            <Save size={16} />
-            {saving ? "Saving…" : "Save changes"}
-          </button>
+          activeSection === "payments" ? null : (
+            <button
+              className="admin-button admin-button-dark"
+              form="admin-settings-form"
+              type="submit"
+              disabled={saving}
+            >
+              <Save size={16} />
+              {saving ? "Saving…" : "Save changes"}
+            </button>
+          )
         }
       />
       <div className="admin-settings-layout">
@@ -127,14 +163,22 @@ export default function Settings({ onNotify }) {
               </label>
               <label className="admin-form-label">
                 Store contact email
-                <input type="email" value={form.supportEmail || ""} onChange={(event) => update("supportEmail", event.target.value)} />
+                <input
+                  type="email"
+                  value={form.supportEmail || ""}
+                  onChange={(event) =>
+                    update("supportEmail", event.target.value)
+                  }
+                />
               </label>
               <label className="admin-form-label">
                 Store description
                 <textarea
                   rows="3"
                   value={form.description || ""}
-                  onChange={(event) => update("description", event.target.value)}
+                  onChange={(event) =>
+                    update("description", event.target.value)
+                  }
                 />
               </label>
               <div className="admin-settings-divider" />
@@ -148,7 +192,9 @@ export default function Settings({ onNotify }) {
                   className={`admin-toggle ${form.onlineStore === false ? "" : "is-on"}`}
                   type="button"
                   aria-label="Toggle online store"
-                  onClick={() => update("onlineStore", form.onlineStore === false)}
+                  onClick={() =>
+                    update("onlineStore", form.onlineStore === false)
+                  }
                 >
                   <i />
                 </button>
@@ -216,7 +262,9 @@ export default function Settings({ onNotify }) {
                   className={`admin-toggle ${form.guestCheckout === true ? "is-on" : ""}`}
                   type="button"
                   aria-label="Toggle guest checkout"
-                  onClick={() => update("guestCheckout", form.guestCheckout !== true)}
+                  onClick={() =>
+                    update("guestCheckout", form.guestCheckout !== true)
+                  }
                 >
                   <i />
                 </button>
@@ -230,19 +278,149 @@ export default function Settings({ onNotify }) {
                   className={`admin-toggle ${form.requirePhone !== false ? "is-on" : ""}`}
                   type="button"
                   aria-label="Toggle phone number requirement"
-                  onClick={() => update("requirePhone", form.requirePhone === false)}
+                  onClick={() =>
+                    update("requirePhone", form.requirePhone === false)
+                  }
                 >
                   <i />
                 </button>
               </div>
               <label className="admin-form-label">
                 Default payment terms
-                <select value={form.paymentTerms || "Due on receipt"} onChange={(event) => update("paymentTerms", event.target.value)}>
+                <select
+                  value={form.paymentTerms || "Due on receipt"}
+                  onChange={(event) =>
+                    update("paymentTerms", event.target.value)
+                  }
+                >
                   <option>Due on receipt</option>
                   <option>Net 7 days</option>
                   <option>Net 30 days</option>
                 </select>
               </label>
+            </section>
+          )}
+          {activeSection === "payments" && (
+            <section className="admin-panel admin-settings-panel">
+              <div className="admin-panel-heading">
+                <div>
+                  <h2>Razorpay checkout mode</h2>
+                  <p>
+                    New online orders use the selected credentials. Existing
+                    orders keep their original mode.
+                  </p>
+                </div>
+              </div>
+              <div className="admin-razorpay-current">
+                <span>ACTIVE CHECKOUT MODE</span>
+                <strong>
+                  {razorpayConfig?.mode === "test"
+                    ? "Test mode"
+                    : razorpayConfig?.mode === "live"
+                      ? "Live mode"
+                      : "Loading…"}
+                </strong>
+                <small>New online orders will use this credential set.</small>
+              </div>
+              <div className="admin-razorpay-mode-options">
+                {[
+                  {
+                    mode: "test",
+                    title: "Test mode",
+                    description:
+                      "Use Razorpay test credentials for simulated payments.",
+                    configured: razorpayConfig?.testConfigured,
+                  },
+                  {
+                    mode: "live",
+                    title: "Live mode",
+                    description:
+                      "Accept real customer payments with live credentials.",
+                    configured: razorpayConfig?.liveConfigured,
+                  },
+                ].map(({ mode, title, description, configured }) => (
+                  <article
+                    className={`admin-razorpay-option ${razorpayConfig?.mode === mode ? "is-active" : ""}`}
+                    key={mode}
+                  >
+                    <div className="admin-razorpay-option-top">
+                      <strong>{title}</strong>
+                      <span
+                        className={configured ? "is-configured" : "is-missing"}
+                      >
+                        {configured ? "Configured" : "Credentials missing"}
+                      </span>
+                    </div>
+                    <p>{description}</p>
+                    <button
+                      type="button"
+                      className={
+                        razorpayConfig?.mode === mode
+                          ? "admin-button admin-button-secondary"
+                          : "admin-button admin-button-dark"
+                      }
+                      disabled={
+                        razorpaySaving ||
+                        !configured ||
+                        razorpayConfig?.mode === mode
+                      }
+                      onClick={() => changeRazorpayMode(mode)}
+                    >
+                      {razorpayConfig?.mode === mode
+                        ? "Currently active"
+                        : `Enable ${mode} mode`}
+                    </button>
+                  </article>
+                ))}
+              </div>
+              <div className="admin-settings-divider" />
+              <div className="admin-razorpay-orders-heading">
+                <div>
+                  <h3>Test orders</h3>
+                  <p>Orders created while test mode was active.</p>
+                </div>
+                <span>{testOrderMeta?.totalRecords ?? 0} total</span>
+              </div>
+              <div className="admin-table-wrap admin-razorpay-orders">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>ORDER</th>
+                      <th>DATE</th>
+                      <th>PAYMENT</th>
+                      <th>TOTAL</th>
+                      <th>STATUS</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {testOrders.map((order) => (
+                      <tr key={order.uuid}>
+                        <td>{order.id}</td>
+                        <td>
+                          {order.date
+                            ? new Date(order.date).toLocaleDateString()
+                            : "—"}
+                        </td>
+                        <td>{order.payment}</td>
+                        <td>₹{Number(order.total).toLocaleString("en-IN")}</td>
+                        <td>{order.status}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {!testOrders.length && <p>No test orders yet.</p>}
+              </div>
+              <ListPagination
+                meta={testOrderMeta}
+                page={testOrderPage}
+                records={testOrderRecords}
+                onPageChange={setTestOrderPage}
+                onRecordsChange={(value) => {
+                  setTestOrderPage(1);
+                  setTestOrderRecords(value);
+                }}
+                label="test orders"
+              />
             </section>
           )}
           {activeSection === "regional" && (
@@ -303,13 +481,24 @@ export default function Settings({ onNotify }) {
               </div>
               <div className="admin-security-card">
                 <div className="admin-avatar admin-avatar-green">
-                  {user?.name?.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase() || "AD"}
+                  {user?.name
+                    ?.split(" ")
+                    .map((part) => part[0])
+                    .join("")
+                    .slice(0, 2)
+                    .toUpperCase() || "AD"}
                 </div>
                 <div>
                   <strong>{user?.name || "Administrator"}</strong>
-                  <span>{user?.phone || user?.email || "Verified administrator account"}</span>
+                  <span>
+                    {user?.phone ||
+                      user?.email ||
+                      "Verified administrator account"}
+                  </span>
                 </div>
-                <span className="admin-security-badge">{user?.primaryRole || user?.role || "Admin"}</span>
+                <span className="admin-security-badge">
+                  {user?.primaryRole || user?.role || "Admin"}
+                </span>
               </div>
               <div className="admin-setting-toggle-row">
                 <div>
@@ -324,7 +513,10 @@ export default function Settings({ onNotify }) {
                   <i />
                 </button>
               </div>
-              <p>Administrator sign-in uses a one-time code sent to the verified mobile number.</p>
+              <p>
+                Administrator sign-in uses a one-time code sent to the verified
+                mobile number.
+              </p>
             </section>
           )}
         </form>

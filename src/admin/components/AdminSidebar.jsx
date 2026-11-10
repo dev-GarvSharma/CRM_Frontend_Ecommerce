@@ -31,14 +31,25 @@ const navigation = [
   { label: "Marketing", path: "/admin/marketing", icon: Megaphone },
   { label: "Coupons", path: "/admin/coupons", icon: Gift },
   { label: "Promotional products", path: "/admin/promotions", icon: Package },
-  { label: "Abandoned carts", path: "/admin/abandoned-carts", icon: ShoppingCart },
+  {
+    label: "Abandoned carts",
+    path: "/admin/abandoned-carts",
+    icon: ShoppingCart,
+  },
   { label: "Contact messages", path: "/admin/contact-messages", icon: Mail },
   { label: "Blog", path: "/admin/blogs", icon: BookOpen },
   { label: "Activity history", path: "/admin/activity", icon: Activity },
   { label: "Access control", path: "/admin/access", icon: KeyRound },
 ];
 
-export default function AdminSidebar({ open, onClose, collapsed, onToggle, user, onLogout }) {
+export default function AdminSidebar({
+  open,
+  onClose,
+  collapsed,
+  onToggle,
+  user,
+  onLogout,
+}) {
   const initials = (user?.name || "Admin")
     .split(" ")
     .map((part) => part[0])
@@ -110,7 +121,12 @@ export default function AdminSidebar({ open, onClose, collapsed, onToggle, user,
             <strong>{user?.name || "Administrator"}</strong>
             <span>{user?.primaryRole || user?.role || "Admin"}</span>
           </div>
-          <button className="admin-collapse-button" onClick={onLogout} aria-label="Sign out" title="Sign out">
+          <button
+            className="admin-collapse-button"
+            onClick={onLogout}
+            aria-label="Sign out"
+            title="Sign out"
+          >
             <LogOut size={16} />
           </button>
           <button
