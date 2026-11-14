@@ -1,5 +1,13 @@
 import { useEffect, useState } from "react";
-import { Download, Eye, MapPin, PackageCheck, Phone, Save, X } from "lucide-react";
+import {
+  Download,
+  Eye,
+  MapPin,
+  PackageCheck,
+  Phone,
+  Save,
+  X,
+} from "lucide-react";
 import {
   exportOrders,
   getAllOrders,
@@ -18,6 +26,7 @@ import {
 } from "../../components/AdminPrimitives.jsx";
 import { formatRupees } from "../../models/catalog.js";
 import { downloadCsv } from "../../services/exportCsv.js";
+import { resolveImageUrl } from "../../../utils/image.js";
 
 export default function Orders({ globalSearch = "", onNotify }) {
   const [response, setResponse] = useState(null);
@@ -123,9 +132,13 @@ export default function Orders({ globalSearch = "", onNotify }) {
             onClick={async () => {
               const result = await exportOrders();
               const rows = result.data?.data || [];
-              onNotify(result.success
-                ? downloadCsv("store-orders.csv", rows) ? "Orders downloaded." : "No orders to export."
-                : result.message || "Could not export orders.");
+              onNotify(
+                result.success
+                  ? downloadCsv("store-orders.csv", rows)
+                    ? "Orders downloaded."
+                    : "No orders to export."
+                  : result.message || "Could not export orders.",
+              );
             }}
           >
             <Download size={16} />
@@ -145,12 +158,11 @@ export default function Orders({ globalSearch = "", onNotify }) {
         <div>
           <span>To fulfill</span>
           <strong className="text-warn">
-            {summary.toFulfill ?? (
+            {summary.toFulfill ??
               orders.filter(
                 (item) =>
                   item.status === "Processing" || item.status === "Pending",
-              ).length
-            )}
+              ).length}
           </strong>
         </div>
         <div>
@@ -163,11 +175,12 @@ export default function Orders({ globalSearch = "", onNotify }) {
         <div>
           <span>Revenue</span>
           <strong>
-            {formatRupees(summary.revenue ?? (
-              orders
-                .filter((item) => item.payment === "Paid")
-                .reduce((sum, item) => sum + Number(item.total || 0), 0)
-            ))}
+            {formatRupees(
+              summary.revenue ??
+                orders
+                  .filter((item) => item.payment === "Paid")
+                  .reduce((sum, item) => sum + Number(item.total || 0), 0),
+            )}
           </strong>
         </div>
       </div>
@@ -252,7 +265,17 @@ export default function Orders({ globalSearch = "", onNotify }) {
           </table>
           {!visible.length && <EmptyState title="No matching orders" />}
         </div>
-        <ListPagination meta={response?.data?.meta} page={page} records={records} onPageChange={setPage} onRecordsChange={(size) => { setPage(1); setRecords(size); }} label="orders" />
+        <ListPagination
+          meta={response?.data?.meta}
+          page={page}
+          records={records}
+          onPageChange={setPage}
+          onRecordsChange={(size) => {
+            setPage(1);
+            setRecords(size);
+          }}
+          label="orders"
+        />
       </section>
       {selectedOrder && (
         <div
@@ -281,20 +304,38 @@ export default function Orders({ globalSearch = "", onNotify }) {
                   <PackageCheck size={19} />
                   <div>
                     <strong>{detail.status}</strong>
-                    <span>Placed {formatDate(detail.createdAt || detail.date)}</span>
+                    <span>
+                      Placed {formatDate(detail.createdAt || detail.date)}
+                    </span>
                   </div>
                 </div>
-                <section className="admin-detail-section" aria-labelledby="order-info-heading">
+                <section
+                  className="admin-detail-section"
+                  aria-labelledby="order-info-heading"
+                >
                   <h3 id="order-info-heading">Order</h3>
-                  <OrderField label="Order number" value={detail.orderNumber || detail.id} />
-                  <OrderField label="Placed" value={formatDate(detail.createdAt || detail.date)} />
+                  <OrderField
+                    label="Order number"
+                    value={detail.orderNumber || detail.id}
+                  />
+                  <OrderField
+                    label="Placed"
+                    value={formatDate(detail.createdAt || detail.date)}
+                  />
                 </section>
-                <section className="admin-detail-section" aria-labelledby="shipping-heading">
+                <section
+                  className="admin-detail-section"
+                  aria-labelledby="shipping-heading"
+                >
                   <h3 id="shipping-heading">Deliver to</h3>
                   <div className="admin-order-delivery-card">
                     <div className="admin-order-delivery-recipient">
                       <span className="admin-order-delivery-avatar">
-                        {(detail.shippingAddress?.recipient || detail.customer || "G")
+                        {(
+                          detail.shippingAddress?.recipient ||
+                          detail.customer ||
+                          "G"
+                        )
                           .trim()
                           .split(/\s+/)
                           .map((part) => part[0] || "")
@@ -303,71 +344,152 @@ export default function Orders({ globalSearch = "", onNotify }) {
                           .toUpperCase()}
                       </span>
                       <div className="admin-order-delivery-contact">
-                        <strong>{detail.shippingAddress?.recipient || detail.customer || "Guest customer"}</strong>
+                        <strong>
+                          {detail.shippingAddress?.recipient ||
+                            detail.customer ||
+                            "Guest customer"}
+                        </strong>
                         {detail.email && <span>{detail.email}</span>}
                       </div>
                     </div>
                     <address className="admin-order-address">
                       <MapPin size={15} aria-hidden="true" />
                       <div>
-                        <span>{detail.shippingAddress?.line1 || "Address unavailable"}</span>
                         <span>
-                          {[detail.shippingAddress?.city, detail.shippingAddress?.state]
+                          {detail.shippingAddress?.line1 ||
+                            "Address unavailable"}
+                        </span>
+                        <span>
+                          {[
+                            detail.shippingAddress?.city,
+                            detail.shippingAddress?.state,
+                          ]
                             .filter(Boolean)
                             .join(", ")}
                         </span>
                         <span>
-                          {[detail.shippingAddress?.postalCode, detail.shippingAddress?.country]
+                          {[
+                            detail.shippingAddress?.postalCode,
+                            detail.shippingAddress?.country,
+                          ]
                             .filter(Boolean)
                             .join(" ")}
                         </span>
                       </div>
                     </address>
                     {detail.shippingAddress?.phone && (
-                      <a className="admin-order-delivery-phone" href={`tel:${detail.shippingAddress.phone}`}>
+                      <a
+                        className="admin-order-delivery-phone"
+                        href={`tel:${detail.shippingAddress.phone}`}
+                      >
                         <Phone size={13} aria-hidden="true" />
                         {detail.shippingAddress.phone}
                       </a>
                     )}
                   </div>
                 </section>
-                <section className="admin-detail-section" aria-labelledby="items-heading">
-                  <h3 id="items-heading">Items ({Array.isArray(detail.items) ? detail.items.length : detail.items || 0})</h3>
+                <section
+                  className="admin-detail-section"
+                  aria-labelledby="items-heading"
+                >
+                  <h3 id="items-heading">
+                    Items (
+                    {Array.isArray(detail.items)
+                      ? detail.items.length
+                      : detail.items || 0}
+                    )
+                  </h3>
                   {Array.isArray(detail.items) && detail.items.length > 0 ? (
                     <ul className="admin-order-items">
                       {detail.items.map((item) => (
                         <li className="admin-order-item" key={item.id}>
+                          <div className="admin-order-item-image">
+                            {(item.productSnapshot?.image ||
+                              item.product?.images?.[0]?.path ||
+                              item.variant?.images?.[0]) && (
+                              <img
+                                src={resolveImageUrl(
+                                  item.productSnapshot?.image ||
+                                    item.product?.images?.[0]?.path ||
+                                    item.variant?.images?.[0],
+                                )}
+                                alt={item.name}
+                              />
+                            )}
+                          </div>
                           <div className="admin-order-item-info">
                             <strong>{item.name}</strong>
-                            <span>{item.sku || "SKU unavailable"} · Qty {item.quantity}</span>
+                            <span>
+                              {item.sku || "SKU unavailable"} · Qty{" "}
+                              {item.quantity}
+                            </span>
                           </div>
                           <div className="admin-order-item-price">
-                            <span>{formatMoney(item.unitPrice, detail.currency)} each</span>
+                            <span>
+                              {formatMoney(item.unitPrice, detail.currency)}{" "}
+                              each
+                            </span>
                             <strong>
-                              {formatMoney(Number(item.unitPrice) * Number(item.quantity), detail.currency)}
+                              {formatMoney(
+                                Number(item.unitPrice) * Number(item.quantity),
+                                detail.currency,
+                              )}
                             </strong>
                           </div>
                         </li>
                       ))}
                     </ul>
                   ) : (
-                    <p className="admin-order-empty-items">Item details unavailable.</p>
+                    <p className="admin-order-empty-items">
+                      Item details unavailable.
+                    </p>
                   )}
                 </section>
-                <section className="admin-detail-section" aria-labelledby="payment-heading">
+                <section
+                  className="admin-detail-section"
+                  aria-labelledby="payment-heading"
+                >
                   <h3 id="payment-heading">Payment</h3>
-                  <OrderField label="Status" value={detail.paymentStatus || detail.payment} />
-                  <OrderField label="Method" value={detail.paymentMethod || detail.method} />
-                  {detail.couponCode && <OrderField label="Coupon" value={detail.couponCode} />}
+                  <OrderField
+                    label="Status"
+                    value={detail.paymentStatus || detail.payment}
+                  />
+                  <OrderField
+                    label="Method"
+                    value={detail.paymentMethod || detail.method}
+                  />
+                  {detail.couponCode && (
+                    <OrderField label="Coupon" value={detail.couponCode} />
+                  )}
                 </section>
-                <section className="admin-detail-section" aria-labelledby="summary-heading">
+                <section
+                  className="admin-detail-section"
+                  aria-labelledby="summary-heading"
+                >
                   <h3 id="summary-heading">Payment summary</h3>
-                  <OrderField label="Subtotal" value={formatMoney(detail.subtotal, detail.currency)} />
-                  {Number(detail.discount) > 0 && <OrderField label="Discount" value={`−${formatMoney(detail.discount, detail.currency)}`} />}
-                  <OrderField label="Shipping" value={formatMoney(detail.shipping, detail.currency)} />
-                  <OrderField label="Total" value={formatMoney(detail.total, detail.currency)} />
+                  <OrderField
+                    label="Subtotal"
+                    value={formatMoney(detail.subtotal, detail.currency)}
+                  />
+                  {Number(detail.discount) > 0 && (
+                    <OrderField
+                      label="Discount"
+                      value={`−${formatMoney(detail.discount, detail.currency)}`}
+                    />
+                  )}
+                  <OrderField
+                    label="Shipping"
+                    value={formatMoney(detail.shipping, detail.currency)}
+                  />
+                  <OrderField
+                    label="Total"
+                    value={formatMoney(detail.total, detail.currency)}
+                  />
                 </section>
-                <section className="admin-detail-section" aria-labelledby="fulfillment-heading">
+                <section
+                  className="admin-detail-section"
+                  aria-labelledby="fulfillment-heading"
+                >
                   <h3 id="fulfillment-heading">Fulfillment status</h3>
                   <SelectField
                     value={statusDraft}

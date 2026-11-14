@@ -2690,8 +2690,24 @@
   border-radius: 6px;
   display: grid;
   gap: 10px;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
   padding: 10px;
+}
+.admin-order-item-image {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #e8ede9;
+  border-radius: 5px;
+  display: flex;
+  height: 44px;
+  justify-content: center;
+  overflow: hidden;
+  width: 44px;
+}
+.admin-order-item-image img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
 }
 .admin-order-item-info,
 .admin-order-item-price {
