@@ -650,10 +650,10 @@ export default function Products({ globalSearch = "", onNotify }) {
                 const filesToUpload = imageFiles.filter(Boolean);
                 const images = imageDraft
                   .map((image, index) =>
-                    imageFiles[index]
-                      ? null
-                      : editingProduct?.images?.[index]?.path ||
-                        (image.startsWith("/uploads/") ? image : null),
+                    image && !imageFiles[index]
+                      ? editingProduct?.images?.[index]?.path ||
+                        (image.startsWith("/uploads/") ? image : null)
+                      : null,
                   )
                   .filter(Boolean);
                 const variants = variantDraft
