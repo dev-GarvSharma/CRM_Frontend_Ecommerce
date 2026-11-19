@@ -490,8 +490,14 @@ export default function Orders({ globalSearch = "", onNotify }) {
                   className="admin-detail-section"
                   aria-labelledby="fulfillment-heading"
                 >
-                  <h3 id="fulfillment-heading">Fulfillment status</h3>
+                  <label
+                    className="admin-detail-section-label"
+                    htmlFor="fulfillment-status"
+                  >
+                    Fulfillment status
+                  </label>
                   <SelectField
+                    id="fulfillment-status"
                     value={statusDraft}
                     onChange={setStatusDraft}
                     options={[

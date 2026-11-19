@@ -71,10 +71,11 @@ export function StatusPill({ children }) {
   );
 }
 
-export function SelectField({ value, onChange, options, ariaLabel }) {
+export function SelectField({ value, onChange, options, ariaLabel, id }) {
   return (
     <label className="admin-select">
       <select
+        id={id}
         aria-label={ariaLabel}
         value={value}
         onChange={(event) => onChange(event.target.value)}

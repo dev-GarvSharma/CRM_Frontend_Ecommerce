@@ -1142,6 +1142,7 @@
   height: 34px;
   padding: 0 9px;
   position: relative;
+  width: 100%;
 }
 .admin-select select {
   appearance: none;
@@ -1149,9 +1150,12 @@
   border: 0;
   color: inherit;
   cursor: pointer;
+  flex: 1;
   font-size: 10px;
+  height: 100%;
   outline: 0;
   padding-right: 13px;
+  width: 100%;
 }
 .admin-select svg {
   pointer-events: none;
@@ -1499,6 +1503,14 @@
 }
 .admin-detail-section h3 {
   color: #9aa49e;
+  font-size: 9px;
+  letter-spacing: 0.6px;
+  margin: 0 0 4px;
+  text-transform: uppercase;
+}
+.admin-detail-section-label {
+  color: #9aa49e;
+  cursor: pointer;
   font-size: 9px;
   letter-spacing: 0.6px;
   margin: 0 0 4px;
